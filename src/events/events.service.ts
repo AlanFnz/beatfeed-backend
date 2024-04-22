@@ -12,14 +12,12 @@ export class EventsService {
   ) {}
 
   async create(createEventDto: CreateEventDto, userId: number): Promise<Event> {
-    const { title, content } = createEventDto;
-
     const event = this.eventsRepository.create({
-      title,
-      content,
+      ...createEventDto,
       userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      goingCount: 0,
+      likesCount: 0,
+      commentsCount: 0,
     });
 
     return this.eventsRepository.save(event);
@@ -47,15 +45,14 @@ export class EventsService {
     eventId: number,
     updateEventDto: CreateEventDto,
   ): Promise<Event> {
-    const { title, content } = updateEventDto;
-    const event = await this.eventsRepository.findOneBy({ eventId: eventId });
+    const event = await this.eventsRepository.findOneBy({ eventId });
 
     if (!event) {
       throw new NotFoundException(`Event with ID ${eventId} not found`);
     }
 
-    event.title = title;
-    event.content = content;
+    Object.assign(event, updateEventDto);
+    event.updatedAt = new Date();
 
     return this.eventsRepository.save(event);
   }

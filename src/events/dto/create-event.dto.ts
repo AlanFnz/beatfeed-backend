@@ -1,4 +1,19 @@
+import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
+
 export class CreateEventDto {
-  readonly title: string;
-  readonly content: string;
+  @IsNotEmpty()
+  @IsString()
+  title: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImage?: string;
 }
