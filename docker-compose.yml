@@ -4,9 +4,9 @@ services:
     image: postgres
     restart: always
     environment:
-      - POSTGRES_USER=bunker1
-      - POSTGRES_PASSWORD=bunker1234
-      - POSTGRES_DB=bunkerapp-db
+      - POSTGRES_USER=beatfeed1
+      - POSTGRES_PASSWORD=beatfeed1234
+      - POSTGRES_DB=beatfeedapp-db
     container_name: postgres
     volumes:
       - ./pgdata:/var/lib/postgresql/data
@@ -17,7 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bunkerapp
+    container_name: beatfeedapp
     environment:
       - PORT=${PORT}
     ports:
@@ -30,7 +30,7 @@ services:
   pgadmin:
     image: dpage/pgadmin4
     restart: always
-    container_name: bunkerapp-pgadmin4
+    container_name: beatfeedapp-pgadmin4
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@admin.com
       - PGADMIN_DEFAULT_PASSWORD=pgadmin4
