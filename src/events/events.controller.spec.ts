@@ -7,76 +7,139 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('EventsController', () => {
   let controller: EventsController;
-  let eventsService: EventsService;
+  let service: EventsService;
+
+  const mockEventsService = {
+    create: jest.fn(),
+    findAllByUserId: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EventsController],
-      providers: [EventsService],
-    })
-      .overrideProvider(EventsService)
-      .useValue(mockEventsService)
-      .compile();
+      providers: [
+        {
+          provide: EventsService,
+          useValue: mockEventsService,
+        },
+      ],
+    }).compile();
 
     controller = module.get<EventsController>(EventsController);
-    eventsService = module.get<EventsService>(EventsService);
+    service = module.get<EventsService>(EventsService);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
+  describe('findAllUserEvents', () => {
+    it('should return an array of events', async () => {
+      const userId = 1;
+      const events: Event[] = [new Event(), new Event()];
+      jest.spyOn(service, 'findAllByUserId').mockResolvedValue(events);
+
+      const result = await controller.findAllUserEvents({
+        user: { id: userId },
+      });
+      expect(result).toEqual(events);
+      expect(service.findAllByUserId).toHaveBeenCalledWith(userId);
+    });
+  });
+
   describe('createEvent', () => {
-    it('should create a event', async () => {
+    it('should create an event', async () => {
       const createEventDto: CreateEventDto = {
         title: 'Test Event',
-        content: 'This is a test event',
+        description: 'This is a test event description',
+        location: 'Test Location',
+        coverImage: 'Test Image URL',
       };
       const userId = 1;
-      const event: Event = new Event();
-      event.title = createEventDto.title;
-      event.content = createEventDto.content;
-      event.userId = userId;
+      const event: Event = {
+        ...createEventDto,
+        userId,
+        eventId: 1,
+        goingCount: 0,
+        likesCount: 0,
+        commentsCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Event;
 
-      jest.spyOn(eventsService, 'create').mockResolvedValue(event);
+      jest.spyOn(service, 'create').mockResolvedValue(event);
 
       const mockRequest = { user: { id: userId } };
-
       const result = await controller.createEvent(createEventDto, mockRequest);
-      expect(result).toBe(event);
+      expect(result).toEqual(event);
+      expect(service.create).toHaveBeenCalledWith(createEventDto, userId);
     });
   });
 
   describe('findEventById', () => {
-    it('should find a event by ID', async () => {
+    it('should return an event by ID', async () => {
       const eventId = 1;
-      const event: Event = new Event();
+      const event = new Event();
       event.eventId = eventId;
       event.title = 'Test Event';
-      event.content = 'This is a test event';
+      event.description = 'This is a test event';
 
-      jest.spyOn(eventsService, 'findOne').mockResolvedValue(event);
+      jest.spyOn(service, 'findOne').mockResolvedValue(event);
 
       const result = await controller.findEventById(eventId);
-      expect(result).toBe(event);
+      expect(result).toEqual(event);
     });
 
-    it('should handle event not found by ID', async () => {
-      const eventId = 1;
-      jest
-        .spyOn(eventsService, 'findOne')
-        .mockRejectedValue(new NotFoundException());
+    it('should throw NotFoundException if the event is not found', async () => {
+      const eventId = 999;
+      jest.spyOn(service, 'findOne').mockImplementation(() => {
+        throw new NotFoundException('Event not found');
+      });
 
-      try {
-        await controller.findEventById(eventId);
-      } catch (error) {
-        expect(error).toBeInstanceOf(NotFoundException);
-      }
+      await expect(controller.findEventById(eventId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
-  const mockEventsService = {
-    create: jest.fn(),
-    findOne: jest.fn(),
-  };
+  describe('updateEvent', () => {
+    it('should update an event', async () => {
+      const eventId = 1;
+      const updateEventDto: CreateEventDto = {
+        title: 'Updated Event',
+        description: 'Updated description',
+        location: 'Updated Location',
+        coverImage: 'Updated Image URL',
+      };
+      const updatedEvent = {
+        ...updateEventDto,
+        eventId,
+        userId: 1,
+        goingCount: 0,
+        likesCount: 0,
+        commentsCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Event;
+
+      jest.spyOn(service, 'update').mockResolvedValue(updatedEvent);
+
+      const result = await controller.updateEvent(eventId, updateEventDto);
+      expect(result).toEqual(updatedEvent);
+      expect(service.update).toHaveBeenCalledWith(eventId, updateEventDto);
+    });
+  });
+
+  describe('removeEvent', () => {
+    it('should remove an event', async () => {
+      const eventId = 1;
+      jest.spyOn(service, 'remove').mockResolvedValue();
+
+      await expect(controller.removeEvent(eventId)).resolves.not.toThrow();
+      expect(service.remove).toHaveBeenCalledWith(eventId);
+    });
+  });
 });
